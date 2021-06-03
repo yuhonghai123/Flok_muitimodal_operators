@@ -1,0 +1,63 @@
+import pandas as pd
+from FlokAlgorithmLocal import FlokDataFrame, FlokAlgorithmLocal
+import json
+import sys, os
+import numpy as np
+import librosa
+
+class Batch_AudioSpeedControl(FlokAlgorithmLocal):
+    def run(self, inputDataSets, params):
+        audio_dict=inputDataSets.get(0)
+        SpeedParameter = float(params["speed"])
+        # OriginalPitch = str(params["OriginalPitch"])
+        # LogBase = pow(2, 1 / 12)
+        # Step = int(round(-np.log(float(SpeedParameter)) / np.log(float(LogBase)), 0))
+
+        for audio_name,audio in audio_dict.items():
+            y=audio[0]
+            sr=audio[1]
+            # if OriginalPitch == "Y":
+            #     audio_dict[audio_name] = (librosa.effects.pitch_shift(y, sr, n_steps=Step), int(sr * SpeedParameter))
+            # elif OriginalPitch == "N":
+            audio_dict[audio_name] = (y, int(sr * SpeedParameter))
+
+
+
+            # b = librosa.effects.pitch_shift(y, sr, n_steps=Step)
+            # librosa.output.write_wav("Output.wav", librosa.effects.pitch_shift(y, sr, n_steps=Step), int(sr * SpeedParameter))
+            #
+            # b = librosa.effects.pitch_shift(File, Speed, n_steps=Step)
+            # librosa.output.write_wav("Output.wav", b, int(Speed * SpeedParameter))
+            #
+            # audio_dict[audio_name] = (y[int(start * sr):int(end * sr)],sr)
+        result = FlokDataFrame()
+        result.addDF(audio_dict)
+        return result
+
+if __name__ == "__main__":
+    all_info = json.loads(sys.argv[1])
+    # f = open("test.json", encoding = 'utf-8')
+    # all_info = json.loads(f)
+    # all_info = {
+    #         "input": ["Test-Swan-Saint-Saens.wav"],
+    #         "inputFormat": ["audio"],
+    #         "inputLocation":["local_fs"],
+    #         "output": ["test_ChangeSpeed.wav"],
+    #         "outputFormat": ["audio"],
+    #         "outputLocation": ['local_fs'],
+    #         "parameters": {"SpeedParameter":2.0 , #demo,没对时间做容错处理
+    #                         "OriginalPitch":Y  #
+    #                        }
+    #     }
+
+    params = all_info["parameters"]
+    inputPaths = all_info["input"]
+    inputTypes = all_info["inputFormat"]
+    inputLocation = all_info["inputLocation"]
+    outputPaths = all_info["output"]
+    outputTypes = all_info["outputFormat"]
+    outputLocation = all_info["outputLocation"]
+    algorithm = Batch_AudioSpeedControl()
+    audioList = algorithm.read(inputPaths, inputTypes, inputLocation, outputPaths, outputTypes)
+    result = algorithm.run(audioList, params)
+    algorithm.write(outputPaths, result, outputTypes, outputLocation)
